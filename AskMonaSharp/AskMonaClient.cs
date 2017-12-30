@@ -2,6 +2,7 @@
 using AskMonaSharp.Models;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -33,7 +34,7 @@ namespace AskMonaSharp
         {
             var query = GetQuery(GetAllMethod(nameof(TopicsListAsync)));
 
-            var result = await client.GetStringAsync(CreateURI(query, cat_id => category.ToValue()));
+            var result = await client.GetStringAsync(CreateURI(query, new { cat_id = category.ToValue() }));
 
             return JsonConvert.DeserializeObject<TopicList>(result);
         }
@@ -43,16 +44,16 @@ namespace AskMonaSharp
         {
             var query = GetQuery(GetAllMethod(nameof(ResponsesList)));
 
-            var result = await client.GetStringAsync(CreateURI(query, t_id => topicId));
+            var result = await client.GetStringAsync(CreateURI(query, new { t_id = topicId }));
 
             return JsonConvert.DeserializeObject<ResponseList>(result);
         }
 
-        private string CreateURI(Tuple<string, Method> query, params Expression<Func<object, object>>[] exprs)
+        private string CreateURI(Tuple<string, Method> query, object obj)
         {
             var uri = new UriBuilder(_Host + query.Item1)
             {
-                Query = CreateGetContent(exprs)
+                Query = CreateGetContent(obj)
             }.ToString();
 
             Debug.WriteLine($"uri = {uri}");
@@ -60,27 +61,19 @@ namespace AskMonaSharp
             return uri;
         }
 
-        private static string CreateGetContent(params Expression<Func<object, object>>[] exprs)
+        private string GetParam(KeyValuePair<string, object> pair)
         {
-            var contents = HttpUtility.ParseQueryString(string.Empty);
-            foreach (var expr in exprs)
+            if(pair.Value is IEnumerable enumerable)
             {
-                var obj = expr.Compile().Invoke(null);
-                if (obj == null)
-                {
-                    continue;
-                }
-
-                var param = obj.ToString();
-                if (string.IsNullOrEmpty(param))
-                {
-                    continue;
-                }
-
-                contents[expr.Parameters[0].Name] = HttpUtility.UrlEncode(param);
+                return string.Join("&", enumerable.OfType<object>().Select(x => $"{pair.Key}={x}"));
             }
-            return contents.ToString();
+            else
+            {
+                return $"{pair.Key}={pair.Value}";
+            }
         }
+
+        private string CreateGetContent(object obj) => string.Join("", obj.Compact().Select(x => GetParam(x)));
 
 
         private MethodInfo GetAllMethod(string methodName) => typeof(AskMonaClient).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
