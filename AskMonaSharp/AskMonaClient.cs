@@ -3,6 +3,7 @@ using AskMonaSharp.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -28,13 +29,11 @@ namespace AskMonaSharp
         public void Dispose() => client?.Dispose();
 
         [Query(Method.GET, "/v1/topics/list")]
-        public async Task<TopicList> TopicsListAsync()
+        public async Task<TopicList> TopicsListAsync(Category? category = null, string tag = null, int? safe = null, string order = null, int? limit = null, int? offset = null)
         {
             var query = GetQuery(GetAllMethod(nameof(TopicsListAsync)));
 
-            var baseUrl = _Host + query.Item1;
-
-            var result = await client.GetStringAsync(baseUrl);
+            var result = await client.GetStringAsync(CreateURI(query, cat_id => category.ToValue()));
 
             return JsonConvert.DeserializeObject<TopicList>(result);
         }
@@ -44,16 +43,21 @@ namespace AskMonaSharp
         {
             var query = GetQuery(GetAllMethod(nameof(ResponsesList)));
 
-            var baseUrl = _Host + query.Item1;
-
-            var uri = new UriBuilder(baseUrl)
-            {
-                Query = CreateGetContent(t_id => topicId)
-            }.ToString();
-
-            var result = await client.GetStringAsync(uri);
+            var result = await client.GetStringAsync(CreateURI(query, t_id => topicId));
 
             return JsonConvert.DeserializeObject<ResponseList>(result);
+        }
+
+        private string CreateURI(Tuple<string, Method> query, params Expression<Func<object, object>>[] exprs)
+        {
+            var uri = new UriBuilder(_Host + query.Item1)
+            {
+                Query = CreateGetContent(exprs)
+            }.ToString();
+
+            Debug.WriteLine($"uri = {uri}");
+
+            return uri;
         }
 
         private static string CreateGetContent(params Expression<Func<object, object>>[] exprs)
@@ -62,10 +66,16 @@ namespace AskMonaSharp
             foreach (var expr in exprs)
             {
                 var obj = expr.Compile().Invoke(null);
-                if (obj == null) continue;
+                if (obj == null)
+                {
+                    continue;
+                }
 
                 var param = obj.ToString();
-                if (string.IsNullOrEmpty(param)) continue;
+                if (string.IsNullOrEmpty(param))
+                {
+                    continue;
+                }
 
                 contents[expr.Parameters[0].Name] = HttpUtility.UrlEncode(param);
             }

@@ -48,9 +48,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AskMonaClient.cs" />
+    <Compile Include="AskMonaClientUtil.cs" />
     <Compile Include="Attribute\Method.cs" />
     <Compile Include="Attribute\QueryAttribute.cs" />
     <Compile Include="Class1.cs" />
+    <Compile Include="Models\Category.cs" />
     <Compile Include="Models\Response.cs" />
     <Compile Include="Models\ResponseList.cs" />
     <Compile Include="Models\TopicList.cs" />

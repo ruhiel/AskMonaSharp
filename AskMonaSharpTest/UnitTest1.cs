@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AskMonaSharp;
 using System.Threading.Tasks;
+using AskMonaSharp.Models;
 
 namespace AskMonaSharpTest
 {
@@ -11,7 +12,7 @@ namespace AskMonaSharpTest
         [TestMethod]
         public async Task TestTopicListAsync()
         {
-            var result = await new AskMonaClient().TopicsListAsync();
+            var result = await new AskMonaClient().TopicsListAsync(Category.Science_IT);
             Assert.AreEqual(1, result.status);
         }
 
