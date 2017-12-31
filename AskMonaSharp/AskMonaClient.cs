@@ -49,6 +49,16 @@ namespace AskMonaSharp
             return JsonConvert.DeserializeObject<ResponseList>(result);
         }
 
+        [Query(Method.GET, "/v1/users/profile")]
+        public async Task<Profile> Profile(int userId)
+        {
+            var query = GetQuery(GetAllMethod(nameof(Profile)));
+
+            var result = await client.GetStringAsync(CreateURI(query, new { u_id = userId}));
+
+            return JsonConvert.DeserializeObject<Profile>(result);
+        }
+
         private string CreateURI(Tuple<string, Method> query, object obj)
         {
             var uri = new UriBuilder(_Host + query.Item1)
