@@ -12,7 +12,7 @@ namespace AskMonaSharpTest
         [TestMethod]
         public async Task TestTopicListAsync()
         {
-            var result = await new AskMonaClient().TopicsListAsync(Category.Science_IT);
+            var result = await new AskMonaClient().TopicsListAsync(category:Category.Science_IT, safe:false, order:Order.Updated, limit:30, offset:0);
             Assert.AreEqual(1, result.status);
         }
 

@@ -30,21 +30,21 @@ namespace AskMonaSharp
         public void Dispose() => client?.Dispose();
 
         [Query(Method.GET, "/v1/topics/list")]
-        public async Task<TopicList> TopicsListAsync(Category? category = null, string tag = null, int? safe = null, string order = null, int? limit = null, int? offset = null)
+        public async Task<TopicList> TopicsListAsync(Category? category = null, string tag = null, bool? safe = null, Order? order = null, int? limit = null, int? offset = null)
         {
             var query = GetQuery(GetAllMethod(nameof(TopicsListAsync)));
 
-            var result = await client.GetStringAsync(CreateURI(query, new { cat_id = category.ToValue() }));
+            var result = await client.GetStringAsync(CreateURI(query, new { cat_id = category.ToValue(), tag = tag, safe = safe.ToValue(), order = order.ToValue(), limit = limit, offset = offset}));
 
             return JsonConvert.DeserializeObject<TopicList>(result);
         }
 
         [Query(Method.GET, "/v1/responses/list")]
-        public async Task<ResponseList> ResponsesList(int topicId)
+        public async Task<ResponseList> ResponsesList(int topicId, int? from = null, int? to = null, bool? topic_detail = null, bool? if_updated_since = null, int? if_modified_since = null)
         {
             var query = GetQuery(GetAllMethod(nameof(ResponsesList)));
 
-            var result = await client.GetStringAsync(CreateURI(query, new { t_id = topicId }));
+            var result = await client.GetStringAsync(CreateURI(query, new { t_id = topicId, from = from, to = to, topic_detail = topic_detail.ToValue(), if_updated_since = if_updated_since.ToValue(), if_modified_since = if_modified_since}));
 
             return JsonConvert.DeserializeObject<ResponseList>(result);
         }
@@ -63,7 +63,7 @@ namespace AskMonaSharp
 
         private string GetParam(KeyValuePair<string, object> pair)
         {
-            if(pair.Value is IEnumerable enumerable)
+            if(!(pair.Value is string) && pair.Value is IEnumerable enumerable)
             {
                 return string.Join("&", enumerable.OfType<object>().Select(x => $"{pair.Key}={x}"));
             }
@@ -73,7 +73,7 @@ namespace AskMonaSharp
             }
         }
 
-        private string CreateGetContent(object obj) => string.Join("", obj.Compact().Select(x => GetParam(x)));
+        private string CreateGetContent(object obj) => string.Join("&", obj.Compact().Select(x => GetParam(x)));
 
 
         private MethodInfo GetAllMethod(string methodName) => typeof(AskMonaClient).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);

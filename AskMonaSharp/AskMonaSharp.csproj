@@ -53,6 +53,7 @@
     <Compile Include="Attribute\QueryAttribute.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Models\Category.cs" />
+    <Compile Include="Models\Order.cs" />
     <Compile Include="Models\Response.cs" />
     <Compile Include="Models\ResponseList.cs" />
     <Compile Include="Models\TopicList.cs" />
