@@ -30,40 +30,37 @@ namespace AskMonaSharp
         public void Dispose() => client?.Dispose();
 
         [Query(Method.GET, "/v1/topics/list")]
-        public async Task<TopicList> TopicsListAsync(Category? category = null, string tag = null, bool? safe = null, Order? order = null, int? limit = null, int? offset = null)
-        {
-            var query = GetQuery(GetAllMethod(nameof(TopicsListAsync)));
-
-            var result = await client.GetStringAsync(CreateURI(query, new { cat_id = category.ToValue(), tag = tag, safe = safe.ToValue(), order = order.ToValue(), limit = limit, offset = offset}));
-
-            return JsonConvert.DeserializeObject<TopicList>(result);
-        }
+        public Task<TopicList> TopicsListAsync(Category? category = null, string tag = null, bool? safe = null, Order? order = null, int? limit = null, int? offset = null) => Execute<TopicList>(nameof(TopicsListAsync), new { cat_id = category.ToValue(), tag = tag, safe = safe.ToValue(), order = order.ToValue(), limit = limit, offset = offset });
 
         [Query(Method.GET, "/v1/responses/list")]
-        public async Task<ResponseList> ResponsesList(int topicId, int? from = null, int? to = null, bool? topic_detail = null, bool? if_updated_since = null, int? if_modified_since = null)
-        {
-            var query = GetQuery(GetAllMethod(nameof(ResponsesList)));
-
-            var result = await client.GetStringAsync(CreateURI(query, new { t_id = topicId, from = from, to = to, topic_detail = topic_detail.ToValue(), if_updated_since = if_updated_since.ToValue(), if_modified_since = if_modified_since}));
-
-            return JsonConvert.DeserializeObject<ResponseList>(result);
-        }
+        public Task<ResponseList> ResponsesList(int topicId, int? from = null, int? to = null, bool? topic_detail = null, bool? if_updated_since = null, int? if_modified_since = null) => Execute<ResponseList>(nameof(TopicsListAsync), new { t_id = topicId, from = from, to = to, topic_detail = topic_detail.ToValue(), if_updated_since = if_updated_since.ToValue(), if_modified_since = if_modified_since });
 
         [Query(Method.GET, "/v1/users/profile")]
-        public async Task<Profile> Profile(int userId)
+        public Task<Profile> Profile(int userId) => Execute<Profile>(nameof(Profile), new { u_id = userId });
+
+        private async Task<T> Execute<T>(string methodName, object obj)
+        {
+            var query = GetQuery(GetAllMethod(methodName));
+
+            var result = await client.GetStringAsync(CreateURI(query, obj));
+
+            return JsonConvert.DeserializeObject<T>(result);
+        }
+
+        public async void test1()
         {
             var query = GetQuery(GetAllMethod(nameof(Profile)));
 
-            var result = await client.GetStringAsync(CreateURI(query, new { u_id = userId}));
+            var content = new FormUrlEncodedContent(new { AA = "ff" }.Compact().ToDictionary(x => x.Key, y => y.Value.ToString()));
 
-            return JsonConvert.DeserializeObject<Profile>(result);
+            var response = await client.PostAsync(CreateURI(query), content);
         }
 
-        private string CreateURI(Tuple<string, Method> query, object obj)
+        private string CreateURI(Tuple<string, Method> query, object obj = null)
         {
             var uri = new UriBuilder(_Host + query.Item1)
             {
-                Query = CreateGetContent(obj)
+                Query = obj == null ? null : CreateGetContent(obj)
             }.ToString();
 
             Debug.WriteLine($"uri = {uri}");
