@@ -9,7 +9,7 @@ namespace AskMonaSharpTest
     [TestClass]
     public class UnitTest1
     {
-        [TestMethod]
+        [Ignore]
         public async Task TestTopicListAsync()
         {
             using (var client = new AskMonaClient())
@@ -19,7 +19,7 @@ namespace AskMonaSharpTest
             }
         }
 
-        [TestMethod]
+        [Ignore]
         public async Task TestResponsesList()
         {
             using (var client = new AskMonaClient())
@@ -29,12 +29,26 @@ namespace AskMonaSharpTest
             }
         }
 
-        [TestMethod]
+        [Ignore]
         public async Task TestProfile()
         {
             using (var client = new AskMonaClient())
             {
                 var result = await client.Profile(11268);
+                Assert.AreEqual(1, result.status);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestSecretkey()
+        {
+            using (var client = new AskMonaClient())
+            {
+                var result = await client.Secretkey(
+                    int.Parse(Environment.GetEnvironmentVariable("AskMonaAPIAppID")),
+                    Environment.GetEnvironmentVariable("AskMonaAPISecretKey"),
+                    Environment.GetEnvironmentVariable("AskMonaAPIUser"),
+                    Environment.GetEnvironmentVariable("AskMonaAPIPassword"));
                 Assert.AreEqual(1, result.status);
             }
         }

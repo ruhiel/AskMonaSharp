@@ -38,6 +38,20 @@ namespace AskMonaSharp
         [Query(Method.GET, "/v1/users/profile")]
         public Task<Profile> Profile(int userId) => Execute<Profile>(nameof(Profile), new { u_id = userId });
 
+        [Query(Method.POST, "/v1/auth/secretkey")]
+        public async Task<SecretKey> Secretkey(int appID, string appSecretkey, string userAddress, string password)
+        {
+            var query = GetQuery(GetAllMethod(nameof(Secretkey)));
+
+            var content = new FormUrlEncodedContent(new { app_id = appID, app_secretkey = appSecretkey, u_address = userAddress, pass = password }.Compact().ToDictionary(x => x.Key, y => y.Value.ToString()));
+
+            var response = await client.PostAsync(CreateURI(query), content);
+
+            var result = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<SecretKey>(result);
+        }
+
         private async Task<T> Execute<T>(string methodName, object obj)
         {
             var query = GetQuery(GetAllMethod(methodName));
@@ -47,14 +61,9 @@ namespace AskMonaSharp
             return JsonConvert.DeserializeObject<T>(result);
         }
 
-        public async void test1()
-        {
-            var query = GetQuery(GetAllMethod(nameof(Profile)));
+        private string GetRandomString(int length = 32) => Guid.NewGuid().ToString("N").Substring(0, length);
 
-            var content = new FormUrlEncodedContent(new { AA = "ff" }.Compact().ToDictionary(x => x.Key, y => y.Value.ToString()));
-
-            var response = await client.PostAsync(CreateURI(query), content);
-        }
+        private long UnixEpochTime() => (DateTime.Now.ToUniversalTime().Ticks - 621355968000000000) / 10000;
 
         private string CreateURI(Tuple<string, Method> query, object obj = null)
         {

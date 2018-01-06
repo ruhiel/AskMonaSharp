@@ -57,6 +57,7 @@
     <Compile Include="Models\Profile.cs" />
     <Compile Include="Models\Response.cs" />
     <Compile Include="Models\ResponseList.cs" />
+    <Compile Include="Models\SecretKey.cs" />
     <Compile Include="Models\TopicList.cs" />
     <Compile Include="Models\Topic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
