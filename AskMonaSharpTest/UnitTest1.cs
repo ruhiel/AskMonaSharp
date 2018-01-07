@@ -42,14 +42,16 @@ namespace AskMonaSharpTest
         [TestMethod]
         public async Task TestSecretkey()
         {
-            using (var client = new AskMonaClient())
+            using (var client = new AskMonaClient(Environment.GetEnvironmentVariable("AskMonaAPISecretKey")))
             {
-                var result = await client.Secretkey(
+                var result1 = await client.Secretkey(
                     int.Parse(Environment.GetEnvironmentVariable("AskMonaAPIAppID")),
-                    Environment.GetEnvironmentVariable("AskMonaAPISecretKey"),
                     Environment.GetEnvironmentVariable("AskMonaAPIUser"),
                     Environment.GetEnvironmentVariable("AskMonaAPIPassword"));
-                Assert.AreEqual(1, result.status);
+                Assert.AreEqual(1, result1.status);
+
+                var result2 = await client.Verify(int.Parse(Environment.GetEnvironmentVariable("AskMonaAPIAppID")), int.Parse(Environment.GetEnvironmentVariable("AskMonaAPIUserID")), result1.secretkey);
+                Assert.AreEqual(1, result2.status);
             }
         }
     }

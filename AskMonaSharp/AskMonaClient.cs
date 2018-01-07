@@ -21,15 +21,13 @@ namespace AskMonaSharp
     {
         private const string _Host = "http://askmona.org";
         private string _AppSecretKey;
-        private string _AuthSecretKey;
 
         private HttpClient client;
 
-        public AskMonaClient(string appSecretKey = default(string), string authSecretKey = default(string))
+        public AskMonaClient(string appSecretKey = default(string))
         {
             client = new HttpClient();
             _AppSecretKey = appSecretKey;
-            _AuthSecretKey = authSecretKey;
         }
 
         public void Dispose() => client?.Dispose();
@@ -44,29 +42,29 @@ namespace AskMonaSharp
         public Task<Profile> Profile(int userId) => Execute<Profile>(nameof(Profile), new { u_id = userId });
 
         [Query(Method.POST, "/v1/auth/secretkey")]
-        public Task<SecretKey> Secretkey(int appID, string appSecretkey, string userAddress, string password) => Execute<SecretKey>(nameof(Secretkey), new { app_id = appID, app_secretkey = appSecretkey, u_address = userAddress, pass = password });
+        public Task<SecretKey> Secretkey(int appID, string userAddress, string password) => Execute<SecretKey>(nameof(Secretkey), new { app_id = appID, app_secretkey = _AppSecretKey, u_address = userAddress, pass = password });
 
         [Query(Method.POST, "/v1/users/myprofile")]
-        public Task<MyProfile> MyProfile(int appID, int userID, string userName, string profile)
+        public Task<MyProfile> MyProfile(int appID, int userID, string userName, string profile, string authSecretKey)
         {
             var nonce = GetRandomString();
-            var time = UnixEpochTime();
-            var authKey = CreateAuthKey(nonce, time);
+            var time = GetNowUnixTime();
+            var authKey = CreateAuthKey(nonce, time, authSecretKey);
 
-            return Execute<MyProfile>(nameof(Profile), new { app_id = appID, u_id = userID, nonce = nonce, time = time, auth_key = authKey, u_name = userName, profile = profile });
+            return Execute<MyProfile>(nameof(MyProfile), new { app_id = appID, u_id = userID, nonce = nonce, time = time, auth_key = authKey, u_name = userName, profile = profile });
         }
 
         [Query(Method.POST, "/v1/auth/verify")]
-        public Task<Verify> Verify(int appID, int userID)
+        public Task<Verify> Verify(int appID, int userID, string authSecretKey)
         {
             var nonce = GetRandomString();
-            var time = UnixEpochTime();
-            var authKey = CreateAuthKey(nonce, time);
+            var time = GetNowUnixTime();
+            var authKey = CreateAuthKey(nonce, time, authSecretKey);
 
-            return Execute<Verify>(nameof(Profile), new { app_id = appID, u_id = userID, nonce = nonce, time = time, auth_key = authKey});
+            return Execute<Verify>(nameof(Verify), new { app_id = appID, u_id = userID, nonce = nonce, time = time, auth_key = authKey});
         }
 
-        private string CreateAuthKey(string nonce, long time) => $"{_AppSecretKey}{nonce}{time}{_AuthSecretKey}".ToSHA256Hash().ToBase64String();
+        private string CreateAuthKey(string nonce, long time, string authSecretKey) => $"{_AppSecretKey}{nonce}{time}{authSecretKey}".ToSHA256Hash().ToBase64String();
 
 
         private async Task<T> Execute<T>(string methodName, object obj)
@@ -90,9 +88,35 @@ namespace AskMonaSharp
             return JsonConvert.DeserializeObject<T>(result);
         }
 
-        private string GetRandomString(int length = 32) => Guid.NewGuid().ToString("N").Substring(0, length);
+        private string GetRandomString(int length = 32)
+        {
+            var random = new byte[32];
 
-        private long UnixEpochTime() => (DateTime.Now.ToUniversalTime().Ticks - 621355968000000000) / 10000;
+            //RNGCryptoServiceProviderクラスのインスタンスを作成
+            var rng =
+                new System.Security.Cryptography.RNGCryptoServiceProvider();
+            //または、次のようにもできる
+            //System.Security.Cryptography.RandomNumberGenerator rng =
+            //    System.Security.Cryptography.RandomNumberGenerator.Create();
+
+            //バイト配列に暗号化に使用する厳密な値のランダムシーケンスを設定
+            rng.GetBytes(random);
+
+            return random.ToBase64String();
+        }
+
+        /// <summary>
+        /// 現在のUNIX時刻を作成＆リターン
+        /// </summary>
+        public static long GetNowUnixTime()
+        {
+            //現在時刻のDateTimeオブジェクト
+            var dt = DateTime.Now;
+            //UTC時刻に変更
+            dt = dt.ToUniversalTime();
+            //現在時刻のDateTimeからUNIXエポック時刻のDateTimeを引いて、その結果を秒数で表す
+            return (long)dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+        }
 
         private string CreateURI(Tuple<string, Method> query, object obj = null)
         {
