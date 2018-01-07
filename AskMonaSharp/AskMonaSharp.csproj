@@ -53,6 +53,7 @@
     <Compile Include="Attribute\QueryAttribute.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Models\Category.cs" />
+    <Compile Include="Models\MyProfile.cs" />
     <Compile Include="Models\Order.cs" />
     <Compile Include="Models\Profile.cs" />
     <Compile Include="Models\Response.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Models\SecretKey.cs" />
     <Compile Include="Models\TopicList.cs" />
     <Compile Include="Models\Topic.cs" />
+    <Compile Include="Models\Verify.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
