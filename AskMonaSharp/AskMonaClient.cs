@@ -20,14 +20,12 @@ namespace AskMonaSharp
     public class AskMonaClient : IDisposable
     {
         private const string _Host = "http://askmona.org";
-        private string _AppSecretKey;
 
         private HttpClient client;
 
         public AskMonaClient(string appSecretKey = default(string))
         {
             client = new HttpClient();
-            _AppSecretKey = appSecretKey;
         }
 
         public void Dispose() => client?.Dispose();
@@ -42,29 +40,29 @@ namespace AskMonaSharp
         public Task<Profile> Profile(int userId) => Execute<Profile>(nameof(Profile), new { u_id = userId });
 
         [Query(Method.POST, "/v1/auth/secretkey")]
-        public Task<SecretKey> Secretkey(int appID, string userAddress, string password) => Execute<SecretKey>(nameof(Secretkey), new { app_id = appID, app_secretkey = _AppSecretKey, u_address = userAddress, pass = password });
+        public Task<SecretKey> Secretkey(int appID, string userAddress, string password, string appSecretKey) => Execute<SecretKey>(nameof(Secretkey), new { app_id = appID, app_secretkey = appSecretKey, u_address = userAddress, pass = password });
 
         [Query(Method.POST, "/v1/users/myprofile")]
-        public Task<MyProfile> MyProfile(int appID, int userID, string userName, string profile, string authSecretKey)
+        public Task<MyProfile> MyProfile(int appID, int userID, string userName, string profile, string appSecretKey, string authSecretKey)
         {
             var nonce = GetRandomString();
             var time = GetNowUnixTime();
-            var authKey = CreateAuthKey(nonce, time, authSecretKey);
+            var authKey = CreateAuthKey(nonce, time, appSecretKey, authSecretKey);
 
             return Execute<MyProfile>(nameof(MyProfile), new { app_id = appID, u_id = userID, nonce = nonce, time = time, auth_key = authKey, u_name = userName, profile = profile });
         }
 
         [Query(Method.POST, "/v1/auth/verify")]
-        public Task<Verify> Verify(int appID, int userID, string authSecretKey)
+        public Task<Verify> Verify(int appID, int userID, string appSecretKey, string authSecretKey)
         {
             var nonce = GetRandomString();
             var time = GetNowUnixTime();
-            var authKey = CreateAuthKey(nonce, time, authSecretKey);
+            var authKey = CreateAuthKey(nonce, time, appSecretKey, authSecretKey);
 
             return Execute<Verify>(nameof(Verify), new { app_id = appID, u_id = userID, nonce = nonce, time = time, auth_key = authKey});
         }
 
-        private string CreateAuthKey(string nonce, long time, string authSecretKey) => $"{_AppSecretKey}{nonce}{time}{authSecretKey}".ToSHA256Hash().ToBase64String();
+        private string CreateAuthKey(string nonce, long time, string appSecretKey, string authSecretKey) => $"{appSecretKey}{nonce}{time}{authSecretKey}".ToSHA256Hash().ToBase64String();
 
 
         private async Task<T> Execute<T>(string methodName, object obj)
